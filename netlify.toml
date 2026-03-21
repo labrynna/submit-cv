@@ -1,0 +1,24 @@
+# Netlify configuration for DirectHR Submit-CV (Next.js)
+#
+# Next.js on Netlify is handled automatically by the Essential Next.js plugin
+# that Netlify installs for you. No manual plugin entry is needed for most
+# projects — this file mainly sets the build command.
+#
+# Environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY)
+# must be added in the Netlify dashboard:
+#   Site settings → Environment variables
+# They are available server-side in API routes and server components.
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  # Tell Next.js to skip telemetry during CI builds
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Redirect bare-domain → www (optional; remove if you prefer the opposite)
+# [[redirects]]
+#   from   = "https://directhr.cn/*"
+#   to     = "https://www.directhr.cn/:splat"
+#   status = 301
+#   force  = true

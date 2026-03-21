@@ -12,7 +12,7 @@ create table if not exists candidates (
   cv_url        text not null,
   cv_storage_path text not null,
   cv_text       text,                          -- extracted plain-text from the CV
-  embedding     vector(1536),                  -- OpenAI text-embedding-3-small
+  embedding     vector(768),                   -- Gemini text-embedding-004
   submitted_at  timestamptz not null default now()
 );
 
@@ -39,7 +39,7 @@ create unique index if not exists candidates_email_path_idx
 --   );
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function match_candidates(
-  query_embedding  vector(1536),
+  query_embedding  vector(768),
   match_threshold  float    default 0.70,
   match_count      int      default 10
 )

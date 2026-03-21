@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     // ── 5. Generate embedding for semantic search ─────────────────────────
     let embedding: number[] | null = null;
-    if (process.env.OPENAI_API_KEY) {
+    if (process.env.GEMINI_API_KEY) {
       try {
         embedding = await createEmbedding(cvText);
       } catch (embErr) {
