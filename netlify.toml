@@ -4,10 +4,16 @@
 # that Netlify installs for you. No manual plugin entry is needed for most
 # projects — this file mainly sets the build command.
 #
-# Environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY)
-# must be added in the Netlify dashboard:
+# ── Environment variables ─────────────────────────────────────────────────────
+# Add these three secrets in the Netlify dashboard under
 #   Site settings → Environment variables
-# They are available server-side in API routes and server components.
+#
+#   SUPABASE_URL              — your Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY — your Supabase service-role (secret) key
+#   GEMINI_API_KEY            — your Google AI Studio API key (free tier)
+#
+# See the "Netlify Environment Variables" section in README.md for details.
+# ─────────────────────────────────────────────────────────────────────────────
 
 [build]
   command = "npm run build"

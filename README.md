@@ -40,6 +40,21 @@ Browser  →  POST /api/submit-cv  →  Supabase Storage  (raw files)
 
 ---
 
+## 🔑 Netlify Environment Variables
+
+When you deploy to Netlify, go to **Site settings → Environment variables** and add these three variables.  
+The names must be entered **exactly** as shown (they are case-sensitive).
+
+| Variable name | Required? | Where to find the value |
+|---|---|---|
+| `SUPABASE_URL` | ✅ Required | Supabase dashboard → your project → **Settings → API** → **Project URL** (e.g. `https://xxxxxxxxxxxx.supabase.co`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ Required | Same page → **service_role** key (labelled "secret") — **never expose this in the browser** |
+| `GEMINI_API_KEY` | ⚙️ Optional* | <https://aistudio.google.com/apikey> → **Create API key** (free, no credit card) |
+
+> \* If `GEMINI_API_KEY` is omitted, CVs are still stored and fully searchable by text — only the AI semantic-similarity ranking is disabled.
+
+---
+
 ## 🚀 Quick Start
 
 ### 1 — Clone and install
