@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useRef, DragEvent, ChangeEvent, FormEvent } from "react";
 
 interface FormState {
@@ -11,27 +12,27 @@ interface FormState {
 }
 
 const POSITIONS = [
-  "不限",
-  "产品经理",
-  "前端工程师",
-  "后端工程师",
-  "全栈工程师",
-  "数据分析师",
-  "UI/UX 设计师",
-  "运营专员",
-  "市场营销",
-  "人力资源",
-  "财务会计",
-  "其他",
+  "No preference",
+  "Product Manager",
+  "Frontend Engineer",
+  "Backend Engineer",
+  "Full Stack Engineer",
+  "Data Analyst",
+  "UI/UX Designer",
+  "Operations Specialist",
+  "Marketing",
+  "Human Resources",
+  "Finance & Accounting",
+  "Other",
 ];
 
 const EXPERIENCE_OPTIONS = [
-  "应届生",
-  "1年以下",
-  "1-3年",
-  "3-5年",
-  "5-10年",
-  "10年以上",
+  "Fresh Graduate",
+  "Less than 1 year",
+  "1–3 years",
+  "3–5 years",
+  "5–10 years",
+  "10+ years",
 ];
 
 export default function SubmitCVPage() {
@@ -39,8 +40,8 @@ export default function SubmitCVPage() {
     name: "",
     email: "",
     phone: "",
-    position: "不限",
-    experience: "1-3年",
+    position: "No preference",
+    experience: "1–3 years",
   });
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -66,12 +67,12 @@ export default function SubmitCVPage() {
     if (!accepted.includes(candidate.type)) {
       setResult({
         type: "error",
-        message: "只支持 PDF 或 Word 格式（.pdf / .doc / .docx）。",
+        message: "Only PDF or Word files are supported (.pdf / .doc / .docx).",
       });
       return;
     }
     if (candidate.size > 10 * 1024 * 1024) {
-      setResult({ type: "error", message: "文件大小不得超过 10 MB。" });
+      setResult({ type: "error", message: "File size must not exceed 10 MB." });
       return;
     }
     setResult(null);
@@ -98,7 +99,7 @@ export default function SubmitCVPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!file) {
-      setResult({ type: "error", message: "请上传您的简历文件。" });
+      setResult({ type: "error", message: "Please upload your CV file." });
       return;
     }
     setSubmitting(true);
@@ -114,31 +115,46 @@ export default function SubmitCVPage() {
       fd.append("cv", file);
 
       const res = await fetch("/api/submit-cv", { method: "POST", body: fd });
-      const data = (await res.json()) as {
-        success?: boolean;
-        error?: string;
-        message?: string;
-      };
+
+      // Parse JSON safely — a non-JSON response (e.g. HTML error page) should
+      // surface as a readable error rather than a confusing "network error".
+      let data: { success?: boolean; error?: string; message?: string };
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        throw new Error(
+          `Unexpected server response (HTTP ${res.status}). Please try again.`
+        );
+      }
 
       if (res.ok && data.success) {
-        setResult({ type: "success", message: data.message ?? "提交成功！" });
+        setResult({
+          type: "success",
+          message: data.message ?? "Submitted successfully!",
+        });
         setForm({
           name: "",
           email: "",
           phone: "",
-          position: "不限",
-          experience: "1-3年",
+          position: "No preference",
+          experience: "1–3 years",
         });
         setFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         setResult({
           type: "error",
-          message: data.error ?? "提交失败，请稍后重试。",
+          message: data.error ?? "Submission failed. Please try again later.",
         });
       }
-    } catch {
-      setResult({ type: "error", message: "网络错误，请检查连接后重试。" });
+    } catch (err) {
+      setResult({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Network error. Please check your connection and try again.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -147,36 +163,46 @@ export default function SubmitCVPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-[#e4e7f0]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
-              D
-            </div>
-            <span className="text-xl font-semibold text-gray-900">DirectHR</span>
+            <Image
+              src="/directhr-logo.png"
+              alt="DirectHR logo"
+              width={120}
+              height={40}
+              className="object-contain"
+              priority
+            />
           </div>
-          <span className="hidden sm:block text-gray-300 mx-2">|</span>
-          <span className="hidden sm:block text-gray-500 text-sm">
-            高效对接优秀人才与企业
+          <span className="hidden sm:block text-[#e4e7f0] mx-2">|</span>
+          <span className="hidden sm:block text-[#636363] text-sm">
+            Connecting exceptional talent with great companies
           </span>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-600 to-cyan-500 text-white py-12 px-4">
+      <section
+        className="text-white py-12 px-4"
+        style={{
+          background: "linear-gradient(135deg, #263f88 0%, #b11d76 100%)",
+        }}
+      >
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3">提交您的简历</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-3">Submit Your CV</h1>
           <p className="text-blue-100 text-base sm:text-lg leading-relaxed">
-            上传简历，我们的 AI 系统将为您匹配最适合的职位机会
+            Upload your CV and let our AI system match you with the best
+            opportunities
           </p>
         </div>
       </section>
 
       {/* Main form */}
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-10">
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-6 pb-4 border-b border-gray-100">
-            个人信息
+        <div className="bg-white rounded-2xl shadow-md border border-[#e4e7f0] p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-[#1a1a2e] mb-6 pb-4 border-b border-[#e4e7f0]">
+            Personal Information
           </h2>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -186,7 +212,7 @@ export default function SubmitCVPage() {
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                姓名 <span className="text-red-500">*</span>
+                Full Name <span className="text-red-500">*</span>
               </label>
               <input
                 id="name"
@@ -196,8 +222,8 @@ export default function SubmitCVPage() {
                 required
                 value={form.name}
                 onChange={handleFieldChange}
-                placeholder="请输入您的姓名"
-                className="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-shadow"
+                placeholder="Enter your full name"
+                className="form-input w-full px-4 py-2.5 border border-[#e4e7f0] rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-shadow"
               />
             </div>
 
@@ -207,7 +233,7 @@ export default function SubmitCVPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                电子邮箱 <span className="text-red-500">*</span>
+                Email Address <span className="text-red-500">*</span>
               </label>
               <input
                 id="email"
@@ -218,7 +244,7 @@ export default function SubmitCVPage() {
                 value={form.email}
                 onChange={handleFieldChange}
                 placeholder="example@company.com"
-                className="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-shadow"
+                className="form-input w-full px-4 py-2.5 border border-[#e4e7f0] rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-shadow"
               />
             </div>
 
@@ -228,7 +254,7 @@ export default function SubmitCVPage() {
                 htmlFor="phone"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                联系电话
+                Phone Number
               </label>
               <input
                 id="phone"
@@ -237,8 +263,8 @@ export default function SubmitCVPage() {
                 autoComplete="tel"
                 value={form.phone}
                 onChange={handleFieldChange}
-                placeholder="138 0000 0000"
-                className="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-shadow"
+                placeholder="+1 555 000 0000"
+                className="form-input w-full px-4 py-2.5 border border-[#e4e7f0] rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-shadow"
               />
             </div>
 
@@ -249,14 +275,14 @@ export default function SubmitCVPage() {
                   htmlFor="position"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  意向职位
+                  Desired Position
                 </label>
                 <select
                   id="position"
                   name="position"
                   value={form.position}
                   onChange={handleFieldChange}
-                  className="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white transition-shadow"
+                  className="form-input w-full px-4 py-2.5 border border-[#e4e7f0] rounded-lg text-sm text-gray-900 bg-white transition-shadow"
                 >
                   {POSITIONS.map((p) => (
                     <option key={p} value={p}>
@@ -271,14 +297,14 @@ export default function SubmitCVPage() {
                   htmlFor="experience"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  工作年限
+                  Years of Experience
                 </label>
                 <select
                   id="experience"
                   name="experience"
                   value={form.experience}
                   onChange={handleFieldChange}
-                  className="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white transition-shadow"
+                  className="form-input w-full px-4 py-2.5 border border-[#e4e7f0] rounded-lg text-sm text-gray-900 bg-white transition-shadow"
                 >
                   {EXPERIENCE_OPTIONS.map((ex) => (
                     <option key={ex} value={ex}>
@@ -292,7 +318,7 @@ export default function SubmitCVPage() {
             {/* File upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                上传简历 <span className="text-red-500">*</span>
+                Upload CV <span className="text-red-500">*</span>
               </label>
               <div
                 onDrop={handleDrop}
@@ -305,13 +331,13 @@ export default function SubmitCVPage() {
                   if (e.key === "Enter" || e.key === " ")
                     fileInputRef.current?.click();
                 }}
-                aria-label="上传简历文件区域，点击或拖拽文件"
+                aria-label="Upload CV file area — click or drag and drop"
                 className={`upload-zone border-2 border-dashed rounded-xl p-8 text-center cursor-pointer ${
                   dragging
-                    ? "border-blue-500 bg-blue-50"
+                    ? "border-[#263f88] bg-[#eaecf5]"
                     : file
                     ? "border-green-400 bg-green-50"
-                    : "border-gray-300 bg-gray-50"
+                    : "border-[#e4e7f0] bg-[#f7f8fc]"
                 }`}
               >
                 <input
@@ -342,14 +368,15 @@ export default function SubmitCVPage() {
                     <p className="text-sm font-medium text-green-700">
                       {file.name}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB · 点击更换文件
+                    <p className="text-xs text-[#636363]">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB · Click to
+                      replace
                     </p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <svg
-                      className="w-10 h-10 text-gray-400"
+                      className="w-10 h-10 text-[#636363]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -363,11 +390,13 @@ export default function SubmitCVPage() {
                       />
                     </svg>
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium text-blue-600">点击上传</span>{" "}
-                      或拖拽文件至此处
+                      <span className="font-medium text-[#263f88]">
+                        Click to upload
+                      </span>{" "}
+                      or drag and drop your file here
                     </p>
-                    <p className="text-xs text-gray-400">
-                      支持 PDF / DOC / DOCX，最大 10 MB
+                    <p className="text-xs text-[#636363]">
+                      PDF / DOC / DOCX — max 10 MB
                     </p>
                   </div>
                 )}
@@ -447,27 +476,29 @@ export default function SubmitCVPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  正在提交…
+                  Submitting…
                 </span>
               ) : (
-                "提交简历"
+                "Submit CV"
               )}
             </button>
 
-            <p className="text-xs text-gray-400 text-center leading-relaxed">
-              提交即表示您同意我们将您的简历信息用于招聘匹配目的。
+            <p className="text-xs text-[#636363] text-center leading-relaxed">
+              By submitting you agree to allow us to use your CV for recruitment
+              matching purposes.
               <br />
-              我们承诺保护您的个人信息安全。
+              We are committed to protecting your personal information.
             </p>
           </form>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-6">
+      <footer className="bg-white border-t border-[#e4e7f0] py-6">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-xs text-gray-400">
-            © {new Date().getFullYear()} DirectHR · 高效对接优秀人才与企业
+          <p className="text-xs text-[#636363]">
+            © {new Date().getFullYear()} DirectHR · Connecting exceptional
+            talent with great companies
           </p>
         </div>
       </footer>

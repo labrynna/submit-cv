@@ -5,14 +5,15 @@
 # projects — this file mainly sets the build command.
 #
 # ── Environment variables ─────────────────────────────────────────────────────
-# Add these three secrets in the Netlify dashboard under
+# Add these secrets in the Netlify dashboard under
 #   Site settings → Environment variables
 #
 #   SUPABASE_URL              — your Supabase project URL
 #   SUPABASE_SERVICE_ROLE_KEY — your Supabase service-role (secret) key
-#   GEMINI_API_KEY            — your Google AI Studio API key (free tier)
+#   GEMINI_API_KEY            — Google AI Studio API key (free tier, primary embeddings)
+#   OPENROUTER_API_KEY        — OpenRouter API key (fallback embeddings, optional)
 #
-# See the "Netlify Environment Variables" section in README.md for details.
+# See .env.example and README.md for details.
 # ─────────────────────────────────────────────────────────────────────────────
 
 [build]

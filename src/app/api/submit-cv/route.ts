@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (!name || !email || !file) {
       return NextResponse.json(
-        { error: "姓名、邮箱和简历文件为必填项。" },
+        { error: "Name, email and CV file are required." },
         { status: 400 }
       );
     }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: "请输入有效的电子邮箱地址。" },
+        { error: "Please enter a valid email address." },
         { status: 400 }
       );
     }
@@ -43,14 +43,14 @@ export async function POST(request: NextRequest) {
     // ── 2. Validate file ──────────────────────────────────────────────────
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "文件大小不得超过 10 MB。" },
+        { error: "File size must not exceed 10 MB." },
         { status: 400 }
       );
     }
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "只支持 PDF 或 Word 格式（.pdf / .doc / .docx）。" },
+        { error: "Only PDF or Word files are supported (.pdf / .doc / .docx)." },
         { status: 400 }
       );
     }
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (storageError) {
       console.error("Storage upload error:", storageError);
       return NextResponse.json(
-        { error: "文件上传失败，请稍后重试。" },
+        { error: "File upload failed. Please try again later." },
         { status: 500 }
       );
     }
@@ -85,17 +85,17 @@ export async function POST(request: NextRequest) {
     } = supabase.storage.from(CV_BUCKET).getPublicUrl(storagePath);
 
     // ── 4. Extract text from PDF (best-effort) ────────────────────────────
-    let cvText = `姓名：${name}\n邮箱：${email}\n`;
-    if (phone) cvText += `电话：${phone}\n`;
-    if (position) cvText += `意向职位：${position}\n`;
-    if (experience) cvText += `工作经验：${experience}\n`;
+    let cvText = `Name: ${name}\nEmail: ${email}\n`;
+    if (phone) cvText += `Phone: ${phone}\n`;
+    if (position) cvText += `Desired Position: ${position}\n`;
+    if (experience) cvText += `Work Experience: ${experience}\n`;
 
     if (file.type === "application/pdf") {
       try {
         const parser = new PDFParse({ data: fileBuffer });
         const result = await parser.getText();
         if (result.text?.trim()) {
-          cvText += `\n--- 简历正文 ---\n${result.text}`;
+          cvText += `\n--- CV Body ---\n${result.text}`;
         }
         await parser.destroy();
       } catch (parseErr) {
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     // ── 5. Generate embedding for semantic search ─────────────────────────
     let embedding: number[] | null = null;
-    if (process.env.GEMINI_API_KEY) {
+    if (process.env.GEMINI_API_KEY || process.env.OPENROUTER_API_KEY) {
       try {
         embedding = await createEmbedding(cvText);
       } catch (embErr) {
@@ -142,12 +142,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "简历提交成功！我们会尽快与您联系。",
+      message: "CV submitted successfully! We will be in touch soon.",
     });
   } catch (err) {
     console.error("Unexpected error in /api/submit-cv:", err);
     return NextResponse.json(
-      { error: "服务器错误，请稍后重试。" },
+      { error: "Server error. Please try again later." },
       { status: 500 }
     );
   }
