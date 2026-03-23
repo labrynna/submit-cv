@@ -86,11 +86,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get public URL for the stored file
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(CV_BUCKET).getPublicUrl(storagePath);
-
     // ── 4. Extract text from PDF (best-effort) ────────────────────────────
     let cvText = `Name: ${name}\nEmail: ${email}\n`;
     if (phone) cvText += `Phone: ${phone}\n`;
@@ -132,7 +127,7 @@ export async function POST(request: NextRequest) {
       phone: phone ?? null,
       position: position ?? null,
       experience: experience ?? null,
-      cv_url: publicUrl,
+      cv_url: null,
       cv_storage_path: storagePath,
       cv_text: cvText,
     };

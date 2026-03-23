@@ -7,6 +7,13 @@ export const CV_BUCKET = "cvs";
 export const CV_TABLE = "candidates";
 
 /**
+ * Default expiry (in seconds) for signed CV download URLs.
+ * Override by setting the SIGNED_URL_EXPIRY_SECONDS environment variable.
+ */
+export const CV_SIGNED_URL_EXPIRY =
+  parseInt(process.env.SIGNED_URL_EXPIRY_SECONDS ?? "", 10) || 300;
+
+/**
  * Returns a server-side Supabase admin client using the service role key.
  * Initialized lazily so the build doesn't fail when env vars are absent.
  * Only use in API routes / server components — never expose to the browser.
