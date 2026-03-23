@@ -26,6 +26,13 @@ create index if not exists candidates_embedding_idx
 create unique index if not exists candidates_email_path_idx
   on candidates (email, cv_storage_path);
 
+-- Make the candidates table private.
+-- With RLS enabled and no permissive policies for the anon / authenticated
+-- roles, the table is invisible to anyone who connects with the public anon
+-- key.  The service_role key used by the API routes bypasses RLS entirely, so
+-- no extra policy is needed for the application to keep inserting rows.
+alter table candidates enable row level security;
+
 -- ─── Helper RPC: semantic search for AI agents ────────────────────────────────
 --
 -- Usage (from your AI agent / API):
