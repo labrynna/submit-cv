@@ -10,10 +10,11 @@ Candidates upload their résumé; the system stores it and generates a semantic 
 | Feature | Detail |
 |---|---|
 | **Modern form UI** | Name, e-mail, phone, position, experience + drag-and-drop file upload |
-| **File storage** | CV files (PDF / DOC / DOCX, ≤ 10 MB) stored in **Supabase Storage** |
+| **File storage** | CV files (PDF / DOC / DOCX, ≤ 10 MB) stored in a **private** Supabase Storage bucket |
 | **Text extraction** | PDF text is extracted server-side with `pdf-parse` |
 | **Vector embeddings** | `text-embedding-004` (Google Gemini, free tier) turns each CV into a 768-dim vector |
 | **Semantic search** | `match_candidates()` SQL function lets AI agents find top-N matching candidates for any job description |
+| **Signed URLs** | A dedicated endpoint (`GET /api/cv-url?path=…`) generates time-limited download links — no public exposure |
 | **Graceful degradation** | If `GEMINI_API_KEY` is absent, CVs are still stored—just without embeddings |
 
 ---
@@ -21,9 +22,13 @@ Candidates upload their résumé; the system stores it and generates a semantic 
 ## 🏗️ Architecture
 
 ```
-Browser  →  POST /api/submit-cv  →  Supabase Storage  (raw files)
+Browser  →  POST /api/submit-cv  →  Supabase Storage (private bucket, raw files)
                                  →  Postgres / pgvector  (metadata + embeddings)
                                  ←  Google Gemini Embeddings API (free tier)
+
+Admin    →  GET /api/cv-url?path=<storagePath>
+                                 →  Supabase Storage createSignedUrl()
+                                 ←  time-limited signed download URL
 ```
 
 **Why Supabase + pgvector?**
@@ -42,7 +47,7 @@ Browser  →  POST /api/submit-cv  →  Supabase Storage  (raw files)
 
 ## 🔑 Netlify Environment Variables
 
-When you deploy to Netlify, go to **Site settings → Environment variables** and add these three variables.  
+When you deploy to Netlify, go to **Site settings → Environment variables** and add these variables.  
 The names must be entered **exactly** as shown (they are case-sensitive).
 
 | Variable name | Required? | Where to find the value |
@@ -50,6 +55,7 @@ The names must be entered **exactly** as shown (they are case-sensitive).
 | `SUPABASE_URL` | ✅ Required | Supabase dashboard → your project → **Settings → API** → **Project URL** (e.g. `https://xxxxxxxxxxxx.supabase.co`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Required | Same page → **service_role** key (labelled "secret") — **never expose this in the browser** |
 | `GEMINI_API_KEY` | ⚙️ Optional* | <https://aistudio.google.com/apikey> → **Create API key** (free, no credit card) |
+| `SIGNED_URL_EXPIRY_SECONDS` | ⚙️ Optional | Lifetime of signed CV download links in seconds. Defaults to **300** (5 minutes). |
 
 > \* If `GEMINI_API_KEY` is omitted, CVs are still stored and fully searchable by text — only the AI semantic-similarity ranking is disabled.
 
@@ -76,7 +82,12 @@ npm install
 
 3. Create a Storage bucket named **`cvs`**:
    - Dashboard → Storage → New bucket → Name: `cvs`
-   - Set **Public** access *on* (so URLs in the DB are directly accessible) or keep it private and use signed URLs.
+   - Keep **Public** access **off** (private bucket — the app uses signed URLs to access files).
+
+   > **Existing public bucket?** Run the following SQL migration to allow `cv_url` to be `NULL` (required for private bucket mode):
+   > ```sql
+   > ALTER TABLE candidates ALTER COLUMN cv_url DROP NOT NULL;
+   > ```
 
 ### 3 — Get a Gemini API key (free)
 
@@ -139,10 +150,19 @@ const { data } = await supabase.rpc("match_candidates", {
   match_count: 10,
 });
 
-console.log(data); // [{ name, email, cv_url, similarity, … }, …]
+console.log(data); // [{ name, email, cv_storage_path, similarity, … }, …]
 ```
 
-The `cv_url` field points directly to the stored file in Supabase Storage for full-document retrieval.
+Because the bucket is **private**, `cv_url` in the database is `null`.  To retrieve a CV file, generate a signed URL with:
+
+```ts
+// GET /api/cv-url?path=<cv_storage_path>
+const res = await fetch(`/api/cv-url?path=${encodeURIComponent(candidate.cv_storage_path)}`);
+const { signedUrl, expiresIn } = await res.json();
+// signedUrl is valid for `expiresIn` seconds (default 300 s / 5 min)
+```
+
+The `cv_storage_path` field in the `candidates` table is the object key to pass to `GET /api/cv-url`.
 
 ---
 
@@ -157,8 +177,10 @@ src/
     api/
       submit-cv/
         route.ts          # POST handler: validate → upload → embed → store
+      cv-url/
+        route.ts          # GET handler: generate a signed download URL for a CV
   lib/
-    supabase.ts           # Supabase admin client
+    supabase.ts           # Supabase admin client + constants (CV_BUCKET, CV_SIGNED_URL_EXPIRY)
     embeddings.ts         # Gemini embedding helper
 supabase/
   schema.sql              # pgvector schema + match_candidates() RPC
@@ -175,6 +197,9 @@ netlify.toml              # Netlify build & deploy config
 - File type and size are validated both client-side and server-side.
 - E-mail format is validated with a regex before any DB write.
 - A unique index on `(email, cv_storage_path)` prevents duplicate uploads.
+- The `cvs` Storage bucket is **private** — uploaded files are not publicly accessible via URL.
+- `GET /api/cv-url` generates time-limited signed URLs (default 5 min) and must only be called from your trusted admin layer, not exposed to candidates or the public.
+- Signed URL expiry can be tuned via the `SIGNED_URL_EXPIRY_SECONDS` environment variable.
 
 ---
 

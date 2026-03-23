@@ -9,7 +9,7 @@ create table if not exists candidates (
   phone         text,
   position      text,
   experience    text,
-  cv_url        text not null,
+  cv_url        text,                          -- null when bucket is private; use /api/cv-url to get a signed URL
   cv_storage_path text not null,
   cv_text       text,                          -- extracted plain-text from the CV
   embedding     vector(768),                   -- Gemini text-embedding-004
