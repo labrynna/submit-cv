@@ -84,10 +84,20 @@ npm install
    - Dashboard → Storage → New bucket → Name: `cvs`
    - Keep **Public** access **off** (private bucket — the app uses signed URLs to access files).
 
-   > **Existing public bucket?** Run the following SQL migration to allow `cv_url` to be `NULL` (required for private bucket mode):
-   > ```sql
-   > ALTER TABLE candidates ALTER COLUMN cv_url DROP NOT NULL;
-   > ```
+4. **If you switched from a public to a private bucket on an existing database**, run these two migrations in the SQL Editor:
+
+   ```sql
+   -- 1. Allow cv_url to be NULL (required for private-bucket mode).
+   --    Without this the INSERT will fail silently and no rows are written.
+   ALTER TABLE candidates ALTER COLUMN cv_url DROP NOT NULL;
+
+   -- 2. Make the candidates table private.
+   --    Blocks access from anyone using the public anon key.
+   --    The service_role key used by the API routes bypasses RLS automatically.
+   ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
+   ```
+
+   If you are setting up a **fresh** database you can skip this step — both settings are already included in `supabase/schema.sql`.
 
 ### 3 — Get a Gemini API key (free)
 
@@ -198,6 +208,7 @@ netlify.toml              # Netlify build & deploy config
 - E-mail format is validated with a regex before any DB write.
 - A unique index on `(email, cv_storage_path)` prevents duplicate uploads.
 - The `cvs` Storage bucket is **private** — uploaded files are not publicly accessible via URL.
+- The `candidates` table has **Row Level Security enabled** — it is not accessible via the public `anon` key.  Only server-side code using `SUPABASE_SERVICE_ROLE_KEY` can read or write the table.
 - `GET /api/cv-url` generates time-limited signed URLs (default 5 min) and must only be called from your trusted admin layer, not exposed to candidates or the public.
 - Signed URL expiry can be tuned via the `SIGNED_URL_EXPIRY_SECONDS` environment variable.
 
