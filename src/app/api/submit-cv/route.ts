@@ -91,16 +91,17 @@ export async function POST(request: NextRequest) {
     if (experience) cvText += `Work Experience: ${experience}\n`;
 
     if (file.type === "application/pdf") {
+      const parser = new PDFParse({ data: fileBuffer });
       try {
-        const parser = new PDFParse({ data: fileBuffer });
         const result = await parser.getText();
         if (result.text?.trim()) {
           cvText += `\n--- CV Body ---\n${result.text}`;
         }
-        await parser.destroy();
       } catch (parseErr) {
         // Non-fatal: proceed without extracted text
         console.warn("PDF parse warning:", parseErr);
+      } finally {
+        await parser.destroy();
       }
     }
 
