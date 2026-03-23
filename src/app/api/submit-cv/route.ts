@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
 import { getSupabaseAdmin, CV_BUCKET, CV_TABLE } from "@/lib/supabase";
 import { createEmbedding } from "@/lib/embeddings";
 
@@ -62,7 +61,15 @@ export async function POST(request: NextRequest) {
     const ext = file.name.split(".").pop() ?? "pdf";
     const storagePath = `${safeEmail}_${timestamp}.${ext}`;
 
-    const supabase = getSupabaseAdmin();
+    const supabase = (() => {
+      try {
+        return getSupabaseAdmin();
+      } catch (configErr) {
+        throw new Error(
+          `[config] Failed to initialize Supabase client: ${configErr instanceof Error ? configErr.message : String(configErr)}`
+        );
+      }
+    })();
 
     const { error: storageError } = await supabase.storage
       .from(CV_BUCKET)
@@ -72,9 +79,9 @@ export async function POST(request: NextRequest) {
       });
 
     if (storageError) {
-      console.error("Storage upload error:", storageError);
+      console.error("[storage] Upload error:", storageError);
       return NextResponse.json(
-        { error: "File upload failed. Please try again later." },
+        { error: `[storage] File upload failed: ${storageError.message}` },
         { status: 500 }
       );
     }
@@ -91,17 +98,19 @@ export async function POST(request: NextRequest) {
     if (experience) cvText += `Work Experience: ${experience}\n`;
 
     if (file.type === "application/pdf") {
-      const parser = new PDFParse({ data: fileBuffer });
+      let parser;
       try {
+        const { PDFParse } = await import("pdf-parse");
+        parser = new PDFParse({ data: fileBuffer });
         const result = await parser.getText();
         if (result.text?.trim()) {
           cvText += `\n--- CV Body ---\n${result.text}`;
         }
       } catch (parseErr) {
         // Non-fatal: proceed without extracted text
-        console.warn("PDF parse warning:", parseErr);
+        console.warn("[pdf-parse] Text extraction warning:", parseErr);
       } finally {
-        await parser.destroy();
+        await parser?.destroy();
       }
     }
 
@@ -112,7 +121,7 @@ export async function POST(request: NextRequest) {
         embedding = await createEmbedding(cvText);
       } catch (embErr) {
         // Non-fatal: store candidate without embedding
-        console.warn("Embedding generation warning:", embErr);
+        console.warn("[embedding] Generation warning:", embErr);
       }
     }
 
@@ -137,7 +146,7 @@ export async function POST(request: NextRequest) {
       .insert(candidateRecord);
 
     if (dbError) {
-      console.error("Database insert error:", dbError);
+      console.error("[database] Insert error:", dbError);
       // File is already stored; treat DB failure as a warning
     }
 
@@ -146,9 +155,10 @@ export async function POST(request: NextRequest) {
       message: "CV submitted successfully! We will be in touch soon.",
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("Unexpected error in /api/submit-cv:", err);
     return NextResponse.json(
-      { error: "Server error. Please try again later." },
+      { error: message },
       { status: 500 }
     );
   }
