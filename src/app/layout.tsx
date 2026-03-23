@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "提交简历 | DirectHR",
-  description: "上传您的简历，探索职业机会。DirectHR 帮助优秀人才与企业高效对接。",
+  title: "Submit CV | DirectHR",
+  description:
+    "Upload your CV and explore career opportunities. DirectHR connects exceptional talent with companies efficiently.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -12,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-gray-50">{children}</body>
     </html>
   );

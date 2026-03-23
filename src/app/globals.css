@@ -1,22 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f7fa;
+  --background: #f7f8fc;
   --foreground: #1a1a2e;
-  --primary: #0052d4;
-  --primary-dark: #003fa3;
-  --primary-light: #e8f0fe;
-  --accent: #00b4d8;
+  --primary: #263f88;
+  --primary-dark: #1a2d6b;
+  --primary-light: #eaecf5;
+  --accent: #b11d76;
+  --accent-light: #f9e8f2;
   --success: #10b981;
   --error: #ef4444;
-  --border: #d1d5db;
-  --text-muted: #6b7280;
+  --border: #e4e7f0;
+  --text-muted: #636363;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
 .upload-zone {
@@ -46,5 +47,5 @@ body {
 .form-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0, 82, 212, 0.12);
+  box-shadow: 0 0 0 3px rgba(38, 63, 136, 0.12);
 }
